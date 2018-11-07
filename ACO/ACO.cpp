@@ -16,7 +16,7 @@
 using namespace std;
 
 vector<int> init(int ant, int begin);
-vector<double> Best_length(vector<vector<int>> &ant_route, vector<vector<double>> &dis_table, int ant, double &bestValue);
+vector<double> Best_length(vector<vector<int>> &ant_route, vector<vector<double>> &dis_table, int ant, double &bestValue, vector<int> &store_route);
 void create_tao(vector<vector<double>> &Tao, int ant, double tao);
 void cal_distance(vector<int> &x, vector<int> &y, vector<vector<double>> &dis_table, int ant);
 void create_delta_tao(vector<vector<double>> &delta_Tao, int ant);
@@ -25,9 +25,10 @@ void update(vector<vector<int>> &ant_route, vector<double> &sum_route, vector<ve
 
 int main(int argc, char *argv[])
 {
-    //./search 51 10000 = ant iteration
+    //./search 51 10000 30 = ant iteration run_times
     int ant = atoi(argv[1]);
     int iter = atoi(argv[2]);
+    int run = atoi(argv[3]);
 
     //read file
     fstream fin("eil51.txt");
@@ -72,143 +73,161 @@ int main(int argc, char *argv[])
     */
 
     srand(time(NULL));
+    vector<double> avg;
+    int tmp_run = run;
 
-    //init tao
-    vector<vector<double>> Tao;
-    create_tao(Tao, ant, tao_);
-
-    //check Tao table
-    /*
-    for (int i = 0; i < Tao.size(); i++)
+    while (tmp_run--)
     {
-        for (int j = 0; j < Tao.size(); j++)
-        {
-            cout << Tao[i][j] << " ";
-        }
-        cout << endl;
-    }
-    */
+        int tmp_iter = iter;
+        //init tao
+        vector<vector<double>> Tao;
+        create_tao(Tao, ant, tao_);
 
-    double bestValue = 99999; // set the shortest route
-    //main loop
-    while (iter--)
-    {
-        //init ant's path
-        vector<int> path;
-        vector<vector<int>> ant_route;
-
-        for (int i = 1; i <= ant; i++)
+        //check Tao table
+        /*
+        for (int i = 0; i < Tao.size(); i++)
         {
-            path = init(ant, i);
-            ant_route.push_back(path);
-        }
-
-        /*//check ant_route
-        for (int i = 0; i < ant; i++)
-        {
-            for (int j = 0; j < 1; j++)
+            for (int j = 0; j < Tao.size(); j++)
             {
-                cout << ant_route[i][j] << " ";
+                cout << Tao[i][j] << " ";
             }
             cout << endl;
         }
         */
 
-        //init list for ant to choose
-        vector<vector<int>> list;
-        for (int i = 1; i <= ant; i++)
+        vector<int> store_route;
+        double bestValue = 99999; // set the shortest route
+        //main loop
+        while (tmp_iter--)
         {
-            vector<int> to_list;
-            for (int j = 1; j <= ant; j++)
+            //init ant's path
+            vector<int> path;
+            vector<vector<int>> ant_route;
+
+            for (int i = 1; i <= ant; i++)
             {
-                if (i != j)
+                path = init(ant, i);
+                ant_route.push_back(path);
+            }
+
+            /*//check ant_route
+            for (int i = 0; i < ant; i++)
+            {
+                for (int j = 0; j < 1; j++)
                 {
-                    to_list.push_back(j);
+                    cout << ant_route[i][j] << " ";
+                }
+                cout << endl;
+            }
+            */
+
+            //init list for ant to choose
+            vector<vector<int>> list;
+            for (int i = 1; i <= ant; i++)
+            {
+                vector<int> to_list;
+                for (int j = 1; j <= ant; j++)
+                {
+                    if (i != j)
+                    {
+                        to_list.push_back(j);
+                    }
+                }
+                list.push_back(to_list);
+            }
+
+            /* //check list
+            for (int i = 0; i < ant; i++)
+            {
+                for (int j = 0; j < 50; j++)
+                {
+                    cout << list[i][j] << " ";
+                }
+                cout << endl;
+            }
+            */
+
+            Moving(ant_route, list, dis_table, Tao, ant);
+
+            /*//check 51*51 ant_route
+            for (int i = 0; i < ant; i++)
+            {
+                for (int j = 0; j < ant; j++)
+                {
+                    cout << ant_route[i][j] << " ";
+                }
+                cout << endl;
+            }
+            */
+
+            //cout << "ant_route size = " << ant_route.size() << endl;
+            vector<double> sum_route;
+            sum_route = Best_length(ant_route, dis_table, ant, bestValue, store_route);
+
+            /*//check sum_route
+            for (int i = 0; i < sum_route.size(); i++)
+            {
+                cout << i + 1 << " : " << sum_route[i] << endl;
+            }
+            */
+
+            //cout << "\nIteration " << iter << " done." << endl;
+            //cout << "shortest path length = " << bestValue << endl;
+
+            //init delta_tao table
+            vector<vector<double>> delta_Tao;
+            create_delta_tao(delta_Tao, ant);
+
+            //cout << "tao size : " << Tao.size() << endl;
+            //cout << "delta tao size : " << delta_Tao.size() << endl;
+
+            /*//check delta_tao table
+            for (int i = 0; i < ant; i++)
+            {
+                for (int j = 0; j < ant; j++)
+                {
+                    cout << delta_Tao[i][j] << " ";
+                }
+                cout << endl;
+            }
+            */
+
+            update(ant_route, sum_route, Tao, delta_Tao, ant);
+
+            /*//check updated delta_tao table
+            for (int i = 0; i <= ant; i++)
+            {
+                for (int j = 0; j <= ant; j++)
+                {
+                    cout << delta_Tao[i][j] << " ";
+                }
+                cout << endl;
+            }
+            */
+
+            //sum original Tao table and delta_Tao table together
+            for (int i = 0; i <= ant; i++)
+            {
+                for (int j = 0; j <= ant; j++)
+                {
+                    Tao[i][j] = Tao[i][j] + delta_Tao[i][j];
                 }
             }
-            list.push_back(to_list);
-        }
+        } //end of iteration
 
-        /* //check list
-        for (int i = 0; i < ant; i++)
-        {
-            for (int j = 0; j < 50; j++)
-            {
-                cout << list[i][j] << " ";
-            }
-            cout << endl;
-        }
-        */
-
-        Moving(ant_route, list, dis_table, Tao, ant);
-
-        /*//check 51*51 ant_route
-        for (int i = 0; i < ant; i++)
-        {
-            for (int j = 0; j < ant; j++)
-            {
-                cout << ant_route[i][j] << " ";
-            }
-            cout << endl;
-        }
-        */
-
-        //cout << "ant_route size = " << ant_route.size() << endl;
-        vector<double> sum_route;
-        sum_route = Best_length(ant_route, dis_table, ant, bestValue);
-
-        /*//check sum_route
-        for (int i = 0; i < sum_route.size(); i++)
-        {
-            cout << i + 1 << " : " << sum_route[i] << endl;
-        }
-        */
-
-        cout << "\nIteration " << iter << " done." << endl;
+        avg.push_back(bestValue);
         cout << "shortest path length = " << bestValue << endl;
-
-        //init delta_tao table
-        vector<vector<double>> delta_Tao;
-        create_delta_tao(delta_Tao, ant);
-
-        //cout << "tao size : " << Tao.size() << endl;
-        //cout << "delta tao size : " << delta_Tao.size() << endl;
-
-        /*//check delta_tao table
+        cout << "route : ";
         for (int i = 0; i < ant; i++)
-        {
-            for (int j = 0; j < ant; j++)
-            {
-                cout << delta_Tao[i][j] << " ";
-            }
-            cout << endl;
-        }
-        */
+            cout << store_route[i] << " ";
+        cout << "\n---" << endl;
+    } //end of run_times
 
-        update(ant_route, sum_route, Tao, delta_Tao, ant);
+    double sum_avg = 0;
+    for (int i = 0; i < run; i++)
+        sum_avg += avg[i];
+    cout << "average path length = " << sum_avg / run << endl;
 
-        /*//check updated delta_tao table
-        for (int i = 0; i <= ant; i++)
-        {
-            for (int j = 0; j <= ant; j++)
-            {
-                cout << delta_Tao[i][j] << " ";
-            }
-            cout << endl;
-        }
-        */
-
-        //sum original Tao table and delta_Tao table together
-        for (int i = 0; i <= ant; i++)
-        {
-            for (int j = 0; j <= ant; j++)
-            {
-                Tao[i][j] = Tao[i][j] + delta_Tao[i][j];
-            }
-        }
-
-        cout << "---" << endl;
-    }
     return 0;
 }
 
@@ -330,7 +349,7 @@ void Moving(vector<vector<int>> &ant_route, vector<vector<int>> &list, vector<ve
     } //end 51 routes
 } //end moving function
 
-vector<double> Best_length(vector<vector<int>> &ant_route, vector<vector<double>> &dis_table, int ant, double &bestValue)
+vector<double> Best_length(vector<vector<int>> &ant_route, vector<vector<double>> &dis_table, int ant, double &bestValue, vector<int> &store_route)
 {
     vector<double> r;
     for (int i = 0; i < ant; i++)
@@ -347,7 +366,14 @@ vector<double> Best_length(vector<vector<int>> &ant_route, vector<vector<double>
         //cout << Value << endl;
         r.push_back(Value);
         if (Value < bestValue)
+        {
+            store_route.clear();
+            for (int k = 0; k < ant; k++)
+            {
+                store_route.push_back(ant_route[i][k]);
+            }
             bestValue = Value;
+        }
     }
     return r;
 } //end Best_length function

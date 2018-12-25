@@ -1,5 +1,5 @@
-import maze_visual
-import maze_samples
+import visual
+import Map
 import random
 import math
 import time
@@ -28,8 +28,8 @@ def SetWeightsForMonteCarloSelection(fitness_scores):
     '''
     # calculate every population's value
     normalized_values = [int(v/sum(fitness_scores)*100+.5) for v in fitness_scores]
-    print('normalized values:')
-    print(normalized_values)
+    #print('normalized values:')
+    #print(normalized_values)
     accum = 0
     selection_weights = []
     for w in normalized_values:
@@ -76,13 +76,13 @@ class Ga:
             print(break_point)
             child_one = Individual(self.maze_length)  # Instantiate children and alter string using parent selection
             child_two = Individual(self.maze_length)
-            print(self.population[parent_one].string[0:break_point])
-            print(self.population[parent_two].string[break_point:self.maze_length])
+            #print(self.population[parent_one].string[0:break_point])
+            #print(self.population[parent_two].string[break_point:self.maze_length])
             child_one.string = self.population[parent_one].string[0:break_point] + self.population[parent_two].string[break_point:self.maze_length]
             print("now child one : {0}".format(child_one.string))
-            print(self.population[parent_one].string[0:break_point])
-            print(self.population[parent_one].string[break_point:self.maze_length])
-            child_two.string = self.population[parent_one].string[0:break_point] + self.population[parent_one].string[break_point:self.maze_length]
+            #print(self.population[parent_two].string[0:break_point])
+            #print(self.population[parent_one].string[break_point:self.maze_length])
+            child_two.string = self.population[parent_two].string[0:break_point] + self.population[parent_one].string[break_point:self.maze_length]
             print("now child two : {0}".format(child_two.string))
     
             
@@ -184,8 +184,8 @@ class Individual:
         no_back_forth = 0   # Giving points for not going back and forth e.g DUDU...
         self.cheese_distance = 0
         moves = ['U','D','L','R']
-        print( "mouse position  : ({mx}, {my})".format(mx=self.row_pos, my=self.col_pos))
-        print( "cheese position : ({cx}, {cy})".format(cx=self.cheese_r, cy=self.cheese_c))
+        #print( "mouse position  : ({mx}, {my})".format(mx=self.row_pos, my=self.col_pos))
+        #print( "cheese position : ({cx}, {cy})".format(cx=self.cheese_r, cy=self.cheese_c))
 
         
         for move in range(len(self.string) -1):
@@ -248,19 +248,19 @@ class Individual:
                             self.col_pos += 1
                             #print( "(L2 {x}, {y})".format(x=self.row_pos, y=self.col_pos) )
         
-        print("final position : ({x},{y})".format(x=self.row_pos, y=self.col_pos))
+        #print("final position : ({x},{y})".format(x=self.row_pos, y=self.col_pos))
         
-        print('open space : ' + str(open_space) + ' no back forth : ' + str(no_back_forth) + ' blocked : ' + str(blocked) )
+        #print('open space : ' + str(open_space) + ' no back forth : ' + str(no_back_forth) + ' blocked : ' + str(blocked) )
         self.fitness_score = open_space  + no_back_forth - blocked 
-        print( 'original fitness score : ' + str(self.fitness_score) )
+        #print( 'original fitness score : ' + str(self.fitness_score) )
         # rounding cheese distance to integer
         self.cheese_distance = int(math.sqrt((self.cheese_c - self.col_pos)**2 + (self.cheese_r - self.row_pos)**2))
 
         
-        print('cheese distance : ' + str(self.cheese_distance))
+        #print('cheese distance : ' + str(self.cheese_distance))
         for point in range(self.maze_length, self.cheese_distance, -1):
             self.fitness_score += 1     # Add a point the closer you are to the cheese
-        print( 'fianl fitness score : ' + str(self.fitness_score) )
+        #print( 'fianl fitness score : ' + str(self.fitness_score) )
         
         if self.fitness_score < 0:
             self.fitness_score = -1     # In the rare case we get a very unfit solution
@@ -298,45 +298,43 @@ class Individual:
 # -----------------  Main Function ------------------ #
 def main():
     '''
-    ALGORITHM WORKS FOR BOTH 0 AND 1
+    ALGORITHM WORKS FOR MAP 1~3
     '''
     test_case = int(input('enter map number 1~3 :'))
     test_case = test_case - 1
-    string_length = maze_samples.string_length[test_case]
+    string_length = Map.string_length[test_case]
     #print(string_length)
 
-    start_ga = Ga(maze_samples.maze[test_case],
+    start_ga = Ga(Map.maze[test_case],
                   maze_length = string_length,
-                  population = 4,
-                  generations = 2)
+                  population = 10,
+                  generations = 100)
 
     while start_ga.evolved < start_ga.generations:
+        count = 1
         for individual in start_ga.population:
-            individual.fitness(maze_samples.maze[test_case])
+            individual.fitness(Map.maze[test_case])
 
             # ------------------ We can visualize it as well ------------ #
             '''
-            if maze_samples.maze[test_case][individual.get_row()][individual.get_col()] == 'C':
+            if Map.maze[test_case][individual.get_row()][individual.get_col()] == 'C':
                 print('Cheese Found!!:' , '\n', 'At Generation: ', start_ga.evolved )
                 time.sleep(5)
                 quit()
             '''
             
-            M = maze_visual.Maze(maze_samples.maze[test_case])
+            M = visual.Maze(Map.maze[test_case])
             M.Visualize()
             M.RunMaze(individual.string)
             #M.RunMaze('R')
             M.ResetMouse()
-            print('individual:')
-            print(individual)
-            print('----------------')
-            if maze_samples.maze[test_case][individual.get_row()][individual.get_col()] == 'C':
+            #print('----- {0} -----'.format(count))
+            count += 1
+            if Map.maze[test_case][individual.get_row()][individual.get_col()] == 'C':
                 print('Cheese Found!!:' , '\n', 'At Generation: ', start_ga.evolved )
                 time.sleep(3600)
                 quit()
         
-        #print('fitness scores:')
-        #print(start_ga.fitness_scores())
 
         set_weight = SetWeightsForMonteCarloSelection(start_ga.fitness_scores()) # this function call will do fitness_scores again
         print('set weight:')
@@ -344,10 +342,10 @@ def main():
         start_ga.cross_breed(set_weight)
         print("This is generation", start_ga.evolved)
     
-    
+        print()
         for child in start_ga.offspring:
             child.mutate()
-            child.fitness(maze_samples.maze[test_case])
+            child.fitness(Map.maze[test_case])
             print("This child has a fitness of: ", child.get_fitness())
 
     
@@ -357,12 +355,16 @@ def main():
     
         start_ga.offspring = []
 
-    
-
         for ind in start_ga.population:
             if ind.get_fitness() == max(start_ga.fitness_scores()):
+                print('max:')
+                print('///////')
                 print("The best fit has a score of: ", ind.get_fitness(), "\n", "Final Position: ", ind.get_row(),ind.get_col(), '\n',
                   "Distance from cheese: ", ind.get_distance())
+                print('///////')
+                break
+        
+        print('-------------------------------')
 
 
 if __name__=='__main__' :

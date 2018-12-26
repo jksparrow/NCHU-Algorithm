@@ -11,7 +11,7 @@ Example solution:
 To run with default parameters, do:  
 `python main.py <generator> <pathfind>`  
 `<generator>` should be the name of an implemented maze generator algorithm (backtracer, prim).  
-`<pathfind>` should be the name of an implemented search algorithm (a_star, depth_first).
+`<pathfind>` should be the name of an implemented search algorithm (a_star, depth_first , ga).
 
 ## Options
 For big mazes is better to not render interactively when building and solving, the flag `--norender` can be used to only render the final solution.  
